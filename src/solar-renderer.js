@@ -76,14 +76,36 @@
  const gl=this.gl,rings=[7,11,16,22,34,47,61,74],sizes=[.6,1,1.1,.85,3.5,2.9,1.9,1.85],periods=[87.969,224.701,365.256,686.98,4332.589,10759.22,30685.4,60189.];
  const data=new Float32Array(128);data.set([0,0,0,4]);const days=time/24;
  for(let i=0;i<8;i++){const a=i*2.39+.4+days*2*Math.PI/periods[i];data.set([Math.cos(a)*rings[i],0,Math.sin(a)*rings[i],sizes[i]],(i+1)*4);}
- let goal=[0,0,0],dist=100,count=9,light=[0,0,0];
+ let goal=[0,0,0],dist=140,count=9,light=[0,0,0];
  if(selected>=0){goal=Array.from(data.slice((selected+1)*4,(selected+1)*4+3));dist=sizes[selected]*(selected===5?10:7);}
  if(system&&selected>=0){const source=window.SolarMoons,local=source.moons.filter(m=>m.parent===selected),rKm=source.planetRadiiKm[selected],unit=sizes[selected]/rKm;const old=goal.slice();light=old.map(v=>-v*10000);for(let i=0;i<9;i++)data.set([1e6,1e6,1e6,0],i*4);data.set([0,0,0,sizes[selected]],(selected+1)*4);goal=[0,0,0];dist=Math.max(sizes[selected]*8,...local.map(m=>m.aKm*(1+m.e)*unit*2.9));
  local.forEach((m,i)=>{const pos=source.position(m,days).map(v=>v*unit);data.set([...pos,m.radiusKm*unit],(9+i)*4);if(i===moonIndex){goal=pos;dist=Math.max(m.radiusKm*unit*8,.012);}});count=9+local.length;
  }
+ // In the full overview, every major moon shares the planetary clock.
+ // Only this overview compresses lunar distances to keep each system readable.
+ if(!system){window.SolarMoons.moons.forEach((m,i)=>{const parent=m.parent+1,pr=sizes[m.parent],rKm=window.SolarMoons.planetRadiiKm[m.parent];const scale=pr*(2.8+Math.log1p(m.aKm/rKm)*.8)/m.aKm;const pos=window.SolarMoons.position(m,days).map((v,k)=>v*scale+data[parent*4+k]);data.set([...pos,m.radiusKm/rKm*pr],(9+i)*4);});count=9+window.SolarMoons.moons.length;}
  const key=selected+':'+system+':'+moonIndex;if(key!==this.lastView){this.lastView=key;this.target=goal.slice();this.distance=dist/zoom;}else{for(let k=0;k<3;k++)this.target[k]+=(goal[k]-this.target[k])*.12;this.distance+=(dist/zoom-this.distance)*.08;}
  const eye=[this.target[0]+Math.sin(yaw)*Math.cos(pitch)*this.distance,this.target[1]+Math.sin(pitch)*this.distance,this.target[2]+Math.cos(yaw)*Math.cos(pitch)*this.distance];
  gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.useProgram(this.program);gl.uniform2f(this.u.resolution,this.canvas.width,this.canvas.height);gl.uniform3fv(this.u.eye,eye);gl.uniform3fv(this.u.target,this.target);gl.uniform1f(this.u.time,time);gl.uniform3fv(this.u.lightOrigin,light);gl.uniform1i(this.u.bodyCount,count);gl.uniform4fv(this.u.bodies,data);gl.drawArrays(gl.TRIANGLES,0,3);
+ this.drawOrbits(eye,data,count,days,selected,system,moonIndex,sizes);
  }
+ drawOrbits(eye,data,count,days,selected,system,moonIndex,sizes){
+ if(!this.overlay){this.overlay=document.createElement('canvas');this.overlay.className='solar-orbit-overlay';this.overlay.setAttribute('aria-hidden','true');this.canvas.after(this.overlay);this.context=this.overlay.getContext('2d');}
+ const c=this.overlay,ctx=this.context,w=this.canvas.width,h=this.canvas.height;if(c.width!==w||c.height!==h){c.width=w;c.height=h;}ctx.clearRect(0,0,w,h);
+ if(system&&moonIndex>=0)return;
+ const norm=v=>{const l=Math.hypot(...v);return v.map(x=>x/l);},cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
+ const fw=norm(this.target.map((v,i)=>v-eye[i])),right=norm(cross(fw,[0,1,0])),up=cross(right,fw);
+ const project=p=>{const v=p.map((x,i)=>x-eye[i]),z=dot(v,fw);if(z<=0)return null;return [w*.5+dot(v,right)/z/.78*h,h*.5-dot(v,up)/z/.78*h,z];};
+ const source=window.SolarMoons,list=source.moons.filter(m=>!system||m.parent===selected),dpr=Math.min(devicePixelRatio||1,2);
+ list.forEach((m,i)=>{const parent=m.parent+1,pr=sizes[m.parent],rKm=source.planetRadiiKm[m.parent],center=Array.from(data.slice(parent*4,parent*4+3));const scale=system?pr/rKm:pr*(2.8+Math.log1p(m.aKm/rKm)*.8)/m.aKm;
+ ctx.strokeStyle=system?'rgba(169,203,229,.34)':'rgba(169,203,229,.19)';ctx.lineWidth=.65*dpr;ctx.beginPath();let pen=false;
+ for(let j=0;j<=100;j++){const q=project(source.position(m,m.periodDays*j/100).map((v,k)=>v*scale+center[k]));if(q){if(pen)ctx.lineTo(q[0],q[1]);else ctx.moveTo(q[0],q[1]);pen=true;}else pen=false;}ctx.stroke();
+ const q=project(source.position(m,days).map((v,k)=>v*scale+center[k]));if(!q)return;
+ // Screen-space locator, not an enlarged physical moon. Occlude behind the parent.
+ const pc=project(center);if(pc){const radius=pr/pc[2]/.78*h;if(q[2]>pc[2]&&Math.hypot(q[0]-pc[0],q[1]-pc[1])<radius)return;}
+ ctx.strokeStyle='rgba(207,226,244,.8)';ctx.lineWidth=.7*dpr;ctx.beginPath();ctx.arc(q[0],q[1],3*dpr,0,Math.PI*2);ctx.stroke();
+ });
+ }
+
  };
 })();

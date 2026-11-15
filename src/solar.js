@@ -19,7 +19,7 @@
     <header class="solar-header"><div><div class="solar-eyebrow">HORIZON / SPACE EXPLORER</div><h1>Worlds beyond the horizon.</h1><p>THE SOLAR SYSTEM</p></div><button class="solar-return">Return to black hole ↗</button></header>
     <aside class="solar-info"><div class="solar-eyebrow">SELECTED WORLD</div><h2>The Sun</h2><p class="solar-description">The star at the center of our Solar System. Eight planets travel around it.</p><div class="solar-period">OUR HOME STAR</div><div class="solar-moons"></div></aside>
     <nav class="solar-planets" aria-label="Choose a planet"><button data-planet="-1" class="active">Sun</button>${planets.map((p,i)=>`<button data-planet="${i}"><i style="background:${p[1]}"></i>${p[0]}</button>`).join('')}</nav>
-    <footer class="solar-footer"><div><button class="solar-pause">Pause orbits</button><button class="solar-reset">Reset view</button></div><span>DRAG TO ORBIT · SCROLL TO ZOOM</span><small>Overview: compressed scale · Moon systems: true relative scale · 1 second = 1 simulated hour</small></footer>`;
+    <footer class="solar-footer"><div><button class="solar-pause">Pause orbits</button><button class="solar-reset">Reset view</button></div><span>DRAG TO ORBIT · SCROLL TO ZOOM</span><small>Overview: compressed moon distances; circles locate tiny moons · Moon systems: true scale · 1 second = 1 simulated hour</small></footer>`;
   document.body.append(panel);
   const canvas = panel.querySelector('canvas'); let renderer; let system=false,moonIndex=-1; let yaw=.3,pitch=.48;
   let active = false, paused = false, zoom = 1, pan = {x:0,y:0}, drag = null, selected = -1;

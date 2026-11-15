@@ -920,3 +920,5 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 .solar-open #app{visibility:hidden}
 
 .solar-moons{margin-top:18px;max-height:30vh;overflow:auto;pointer-events:auto}.solar-moons button{padding:7px 9px;margin:3px;font-size:11px}.solar-moons p{font-size:10px;line-height:1.5;color:#a4b8ce}.solar-info{top:30%;width:245px}
+
+.solar-explorer .solar-orbit-overlay{pointer-events:none;z-index:0;background:transparent;cursor:inherit}
