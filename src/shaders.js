@@ -117,7 +117,7 @@ vec3 starLayer(vec3 dir, float scale, float density, float brightness) {
   vec3 offset = (h - 0.5) * 0.65;
   float d = length(f - offset);
   float size = mix(0.03, 0.11, pow(h.y, 4.0));
-  float core = smoothstep(size, 0.0, d);
+  float core = (1.0 - smoothstep(0.0, size, d));
   core = pow(core, 2.2) * brightness * mix(0.3, 2.4, pow(h.z, 5.0));
 
   // Stellar spectral color: O/B blue-white -> G yellow-white -> K/M amber
@@ -141,13 +141,13 @@ void main() {
   float dust2 = fbm3(dir * 8.5 + vec3(4.2));
   float darkLane = smoothstep(0.36, 0.66, dust2) * exp(-galLat * 11.0);
 
-  vec3 col = vec3(0.005, 0.007, 0.013);
+  vec3 col = vec3(0.00025, 0.0004, 0.0008);
   vec3 nebula = mix(vec3(0.06, 0.09, 0.17), vec3(0.19, 0.12, 0.08), dust1);
-  col += nebula * band * (0.42 + 0.58 * dust1) * (1.0 - 0.72 * darkLane);
+  col += nebula * band * 0.12 * (0.42 + 0.58 * dust1) * (1.0 - 0.72 * darkLane);
 
   // Subtle emission pockets
   float pocket = smoothstep(0.60, 0.88, fbm3(dir * 6.0 + 11.3));
-  col += vec3(0.14, 0.22, 0.42) * pocket * band * 0.35;
+  col += vec3(0.14, 0.22, 0.42) * pocket * band * 0.045;
 
   // Multi-scale crisp 3D Voronoi-grid stars (zero polar distortion)
   col += starLayer(dir, 55.0, 0.91, 2.1);
@@ -426,9 +426,11 @@ void main() {
 
         float filaments = mix(nA.r, nB.g, 0.54);
         float detail = nB.b;
-        float rings = 0.5 + 0.5 * sin(logR * 26.0 - phi * 2.0 - uTime * 0.32);
-        float clump = smoothstep(0.18, 0.92, filaments * 0.62 + detail * 0.28 + rings * 0.22);
-        clump = pow(clump, 1.95);
+        float shear = phi + uTime * keplerOmega * 0.5;
+        float warp = texture(uNoiseTex, vec2(shear / TAU, logR * 0.65)).g;
+        float rings = 0.5 + 0.5 * sin(logR * 63.0 + warp * 13.0 + sin(shear * 3.0) * 1.8);
+        float clump = smoothstep(0.18, 0.92, filaments * 0.52 + detail * 0.24 + rings * 0.30);
+        clump = pow(clump, 2.15);
 
         // Relativistic Doppler shift & beaming factor g
         vec3 gasDir = normalize(vec3(pMid.z, 0.0, -pMid.x));
@@ -500,11 +502,11 @@ void main() {
   // Sharp photon-ring glow around critical impact sphere (grazing rays)
   float photonSphereR = uHorizonR * 1.42;
   if (!hitHorizon && minClosestR < photonSphereR * 1.45) {
-    float ringFocus = exp(-abs(minClosestR - photonSphereR) * 6.5);
+    float ringFocus = exp(-abs(minClosestR - photonSphereR) * 22.0);
     vec3 ringCol = (uMode == 1)
       ? ehtPalette(0.92) * 1.3
       : blackbody(uDiskTemp * 1.25) * 1.25;
-    accum += transmit * ringCol * ringFocus * (0.55 + uMergerPulse * 0.9);
+    accum += transmit * ringCol * ringFocus * (0.34 + uMergerPulse * 0.9);
   }
 
   if (!hitHorizon) {

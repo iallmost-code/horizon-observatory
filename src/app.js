@@ -540,7 +540,7 @@
     let lastHudUpdate = 0;
 
     function frame(now) {
-      const realDt = Math.min(0.05, (now - lastTime) * 0.001);
+      const realDt = Math.max(0, Math.min(0.05, (now - lastTime) * 0.001));
       lastTime = now;
 
       if (!sim.paused) {
@@ -567,7 +567,7 @@
 
       // Camera damping & Ride Probe Mode
       if (cam.autoSpin && !pointerState && sim.followBodyId === null && !sim.paused) {
-        cam.targetTheta += realDt * 0.065;
+        cam.targetTheta += realDt * 0.018;
       }
 
       const damp = 1.0 - Math.exp(-realDt * 10.0);

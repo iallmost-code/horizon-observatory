@@ -258,9 +258,9 @@
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
       // 1024x512 equirectangular deep space starfield & Milky Way band
-      this.skyFbo = this._createFbo(1024, 512, false, false);
+      this.skyFbo = this._createFbo(4096, 2048, false, false);
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.skyFbo.fbo);
-      gl.viewport(0, 0, 1024, 512);
+      gl.viewport(0, 0, 4096, 2048);
       gl.useProgram(this.skyProg);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
