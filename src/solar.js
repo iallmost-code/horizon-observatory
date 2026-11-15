@@ -17,15 +17,16 @@
   panel.className = 'solar-explorer hidden'; panel.setAttribute('aria-label', 'Solar System explorer');
   panel.innerHTML = `<canvas aria-label="Solar System, drag to orbit and scroll to zoom"></canvas>
     <header class="solar-header"><div><div class="solar-eyebrow">HORIZON / SPACE EXPLORER</div><h1>Worlds beyond the horizon.</h1><p>THE SOLAR SYSTEM</p></div><button class="solar-return">Return to black hole ↗</button></header>
-    <aside class="solar-info"><div class="solar-eyebrow">SELECTED WORLD</div><h2>The Sun</h2><p class="solar-description">The star at the center of our Solar System. Eight planets travel around it.</p><div class="solar-period">OUR HOME STAR</div></aside>
+    <aside class="solar-info"><div class="solar-eyebrow">SELECTED WORLD</div><h2>The Sun</h2><p class="solar-description">The star at the center of our Solar System. Eight planets travel around it.</p><div class="solar-period">OUR HOME STAR</div><div class="solar-moons"></div></aside>
     <nav class="solar-planets" aria-label="Choose a planet"><button data-planet="-1" class="active">Sun</button>${planets.map((p,i)=>`<button data-planet="${i}"><i style="background:${p[1]}"></i>${p[0]}</button>`).join('')}</nav>
-    <footer class="solar-footer"><div><button class="solar-pause">Pause orbits</button><button class="solar-reset">Reset view</button></div><span>DRAG TO ORBIT · SCROLL TO ZOOM</span><small>Illustrative view · sizes, distances and orbital speeds compressed</small></footer>`;
+    <footer class="solar-footer"><div><button class="solar-pause">Pause orbits</button><button class="solar-reset">Reset view</button></div><span>DRAG TO ORBIT · SCROLL TO ZOOM</span><small>Overview: compressed scale · Moon systems: true relative scale · 1 second = 1 simulated hour</small></footer>`;
   document.body.append(panel);
-  const canvas = panel.querySelector('canvas'); let renderer; let yaw=.3,pitch=.48;
+  const canvas = panel.querySelector('canvas'); let renderer; let system=false,moonIndex=-1; let yaw=.3,pitch=.48;
   let active = false, paused = false, zoom = 1, pan = {x:0,y:0}, drag = null, selected = -1;
   let width = 0, height = 0, time = 0, last = 0, raf = 0, previousFocus;
   function resize(){width=innerWidth;height=innerHeight;const d=Math.min(devicePixelRatio||1,2);canvas.width=width*d;canvas.height=height*d;}
-  function select(index){selected=index; const p=planets[index];panel.querySelector('h2').textContent=p?p[0]:'The Sun';panel.querySelector('.solar-description').textContent=p?p[4]:'The star at the center of our Solar System. Eight planets travel around it.';panel.querySelector('.solar-period').textContent=p?`ORBITAL PERIOD · ${p[3].toLocaleString()} EARTH DAYS`:'OUR HOME STAR';panel.querySelectorAll('[data-planet]').forEach(b=>b.classList.toggle('active',Number(b.dataset.planet)===index));}
+  function select(index){system=false;moonIndex=-1;zoom=1;selected=index; const p=planets[index];panel.querySelector('h2').textContent=p?p[0]:'The Sun';panel.querySelector('.solar-description').textContent=p?p[4]:'The star at the center of our Solar System. Eight planets travel around it.';panel.querySelector('.solar-period').textContent=p?`ORBITAL PERIOD · ${p[3].toLocaleString()} EARTH DAYS`:'OUR HOME STAR';panel.querySelectorAll('[data-planet]').forEach(b=>b.classList.toggle('active',Number(b.dataset.planet)===index));buildMoons();}
+  function buildMoons(){const area=panel.querySelector('.solar-moons');area.replaceChildren();if(selected<0)return;const local=window.SolarMoons.moons.filter(m=>m.parent===selected);if(!local.length){area.textContent='No natural moons';return;}const toggle=document.createElement('button');toggle.textContent=system?'Back to planet':'Explore moon system';toggle.onclick=()=>{system=!system;moonIndex=-1;zoom=1;buildMoons();};area.append(toggle);if(!system)return;const note=document.createElement('p');note.textContent='True relative sizes and distances. JPL mean-element model; illustrative orientation and phases.';area.append(note);local.forEach((m,i)=>{const b=document.createElement('button');b.textContent=m.name;b.onclick=()=>{moonIndex=i;zoom=1;panel.querySelector('h2').textContent=m.name;panel.querySelector('.solar-description').textContent='Moon of '+planets[selected][0]+'. Mean radius '+m.radiusKm.toLocaleString()+' km. Orbit semi-major axis '+m.aKm.toLocaleString()+' km.';panel.querySelector('.solar-period').textContent=m.periodDays+' EARTH DAYS / ORBIT';};area.append(b);});}
   function open(){if(!renderer){try{renderer=new window.SolarRenderer(canvas);}catch(error){console.error(error);button.textContent="WebGL unavailable";return;}}previousFocus=document.activeElement;active=true;document.body.classList.add('solar-open');panel.classList.remove('hidden');resize();last=performance.now();raf=requestAnimationFrame(frame);panel.querySelector('.solar-return').focus();}
   function close(){active=false;cancelAnimationFrame(raf);panel.classList.add('hidden');document.body.classList.remove('solar-open');previousFocus?.focus();}
   button.addEventListener('click',open);panel.querySelector('.solar-return').addEventListener('click',close);
@@ -39,6 +40,6 @@
   canvas.addEventListener('pointermove',e=>{if(drag){yaw-=(e.clientX-drag.x)*.005;pitch=Math.max(-1.35,Math.min(1.35,pitch+(e.clientY-drag.y)*.005));drag={x:e.clientX,y:e.clientY};}});
   canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
   function frame(now){if(!active)return;const dt=Math.min(.05,(now-last)/1000);last=now;if(!paused)time+=dt;
-    renderer.render(time,selected,zoom,yaw,pitch);raf=requestAnimationFrame(frame);
+    renderer.render(time,selected,zoom,yaw,pitch,system,moonIndex);raf=requestAnimationFrame(frame);
   }
 })();

@@ -918,3 +918,5 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 .solar-footer{position:absolute;bottom:25px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;gap:20px;color:#718aa4;font-size:10px;letter-spacing:.08em}
 .solar-footer small{max-width:235px;line-height:1.6;letter-spacing:0}
 .solar-open #app{visibility:hidden}
+
+.solar-moons{margin-top:18px;max-height:30vh;overflow:auto;pointer-events:auto}.solar-moons button{padding:7px 9px;margin:3px;font-size:11px}.solar-moons p{font-size:10px;line-height:1.5;color:#a4b8ce}.solar-info{top:30%;width:245px}
