@@ -1,0 +1,15 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const box={window:{},performance:{now:()=>1000},Float32Array};
+vm.runInNewContext(fs.readFileSync('src/moons.js','utf8'),box);
+vm.runInNewContext(fs.readFileSync('src/solar-renderer.js','utf8'),box);
+let positions,count;const gl=new Proxy({uniform4fv:(_,v)=>positions=Array.from(v),uniform1i:(_,v)=>count=v},{get:(o,k)=>o[k]||(()=>{})});
+const renderer=Object.create(box.window.SolarRenderer.prototype);Object.assign(renderer,{gl,canvas:{width:1600,height:900},u:{},target:[0,0,0],distance:140,drawOrbits:()=>{}});
+const at=days=>{renderer.render(days*24,-1,1,.3,.48);return positions.slice();};
+const start=at(0),month=at(30),year=at(365.256);
+assert.equal(count,30,'Sun, 8 planets and 21 moons rendered together');
+const delta=(a,b,id)=>Math.hypot(a[id*4]-b[id*4],a[id*4+2]-b[id*4+2]);
+assert(delta(start,month,3)>7,'Earth visibly moves after 30 simulated days');
+assert(delta(start,year,3)<.0001,'Earth closes its yearly orbit');
+const angular=(a,b,id)=>Math.acos(Math.max(-1,Math.min(1,(a[id*4]*b[id*4]+a[id*4+2]*b[id*4+2])/Math.hypot(a[id*4],a[id*4+2])/Math.hypot(b[id*4],b[id*4+2]))));
+assert(angular(start,month,3)>angular(start,month,8),'Earth completes more of its orbit than Neptune in the same interval');
+console.log('Planet motion verified: 30 bodies, visible monthly Earth motion, annual closure, and slower Neptune motion.');

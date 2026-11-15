@@ -86,7 +86,7 @@
  if(!system){window.SolarMoons.moons.forEach((m,i)=>{const parent=m.parent+1,pr=sizes[m.parent],rKm=window.SolarMoons.planetRadiiKm[m.parent];const scale=pr*(2.8+Math.log1p(m.aKm/rKm)*.8)/m.aKm;const pos=window.SolarMoons.position(m,days).map((v,k)=>v*scale+data[parent*4+k]);data.set([...pos,m.radiusKm/rKm*pr],(9+i)*4);});count=9+window.SolarMoons.moons.length;}
  const key=selected+':'+system+':'+moonIndex;if(key!==this.lastView){this.lastView=key;this.target=goal.slice();this.distance=dist/zoom;}else{for(let k=0;k<3;k++)this.target[k]+=(goal[k]-this.target[k])*.12;this.distance+=(dist/zoom-this.distance)*.08;}
  const eye=[this.target[0]+Math.sin(yaw)*Math.cos(pitch)*this.distance,this.target[1]+Math.sin(pitch)*this.distance,this.target[2]+Math.cos(yaw)*Math.cos(pitch)*this.distance];
- gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.useProgram(this.program);gl.uniform2f(this.u.resolution,this.canvas.width,this.canvas.height);gl.uniform3fv(this.u.eye,eye);gl.uniform3fv(this.u.target,this.target);gl.uniform1f(this.u.time,time);gl.uniform3fv(this.u.lightOrigin,light);gl.uniform1i(this.u.bodyCount,count);gl.uniform4fv(this.u.bodies,data);gl.drawArrays(gl.TRIANGLES,0,3);
+ gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.useProgram(this.program);gl.uniform2f(this.u.resolution,this.canvas.width,this.canvas.height);gl.uniform3fv(this.u.eye,eye);gl.uniform3fv(this.u.target,this.target);gl.uniform1f(this.u.time,performance.now()*.001);gl.uniform3fv(this.u.lightOrigin,light);gl.uniform1i(this.u.bodyCount,count);gl.uniform4fv(this.u.bodies,data);gl.drawArrays(gl.TRIANGLES,0,3);
  this.drawOrbits(eye,data,count,days,selected,system,moonIndex,sizes);
  }
  drawOrbits(eye,data,count,days,selected,system,moonIndex,sizes){
@@ -97,6 +97,11 @@
  const fw=norm(this.target.map((v,i)=>v-eye[i])),right=norm(cross(fw,[0,1,0])),up=cross(right,fw);
  const project=p=>{const v=p.map((x,i)=>x-eye[i]),z=dot(v,fw);if(z<=0)return null;return [w*.5+dot(v,right)/z/.78*h,h*.5-dot(v,up)/z/.78*h,z];};
  const source=window.SolarMoons,list=source.moons.filter(m=>!system||m.parent===selected),dpr=Math.min(devicePixelRatio||1,2);
+ if(!system){const radii=[7,11,16,22,34,47,61,74],names=['Mercury','Venus','Earth','Mars','Jupiter','Saturn','Uranus','Neptune'];radii.forEach((radius,i)=>{
+ ctx.strokeStyle=i===selected?'rgba(230,188,125,.55)':'rgba(173,196,223,.24)';ctx.lineWidth=.8*dpr;ctx.beginPath();let pen=false;
+ for(let j=0;j<=180;j++){const a=j/180*Math.PI*2,q=project([Math.cos(a)*radius,0,Math.sin(a)*radius]);if(q){if(pen)ctx.lineTo(q[0],q[1]);else ctx.moveTo(q[0],q[1]);pen=true;}else pen=false;}ctx.stroke();
+ const q=project(Array.from(data.slice((i+1)*4,(i+1)*4+3)));if(q){const pr=sizes[i]/q[2]/.78*h;ctx.font=11*dpr+'px Segoe UI';ctx.fillStyle='rgba(220,232,244,.9)';ctx.shadowColor='#000';ctx.shadowBlur=4*dpr;ctx.fillText(names[i],q[0]+pr+7*dpr,q[1]+4*dpr);ctx.shadowBlur=0;}
+ });}
  list.forEach((m,i)=>{const parent=m.parent+1,pr=sizes[m.parent],rKm=source.planetRadiiKm[m.parent],center=Array.from(data.slice(parent*4,parent*4+3));const scale=system?pr/rKm:pr*(2.8+Math.log1p(m.aKm/rKm)*.8)/m.aKm;
  ctx.strokeStyle=system?'rgba(169,203,229,.34)':'rgba(169,203,229,.19)';ctx.lineWidth=.65*dpr;ctx.beginPath();let pen=false;
  for(let j=0;j<=100;j++){const q=project(source.position(m,m.periodDays*j/100).map((v,k)=>v*scale+center[k]));if(q){if(pen)ctx.lineTo(q[0],q[1]);else ctx.moveTo(q[0],q[1]);pen=true;}else pen=false;}ctx.stroke();

@@ -922,3 +922,5 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 .solar-moons{margin-top:18px;max-height:30vh;overflow:auto;pointer-events:auto}.solar-moons button{padding:7px 9px;margin:3px;font-size:11px}.solar-moons p{font-size:10px;line-height:1.5;color:#a4b8ce}.solar-info{top:30%;width:245px}
 
 .solar-explorer .solar-orbit-overlay{pointer-events:none;z-index:0;background:transparent;cursor:inherit}
+
+.solar-footer>div{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.solar-speed-label{display:flex;flex-direction:column;gap:4px;font-size:9px;color:#9fb1c6;letter-spacing:.05em}.solar-speed{background:#101927;color:#e1eaf5;border:1px solid #9ab6d34d;border-radius:4px;padding:6px;font:11px Segoe UI,sans-serif}.solar-clock{font-size:10px;color:#e6bc7d;min-width:110px}.solar-footer>span{display:none}
