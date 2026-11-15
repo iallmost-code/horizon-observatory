@@ -898,3 +898,23 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
  .event-toast { top:150px;max-width:90vw; }
 }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none !important; } }
+/* Desktop Solar System explorer */
+.solar-explorer{position:fixed;inset:0;z-index:100;background:#02050b;color:#eef3fa;font-family:Segoe UI,sans-serif}
+.solar-explorer canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}
+.solar-explorer canvas:active{cursor:grabbing}
+.solar-header{position:absolute;top:36px;left:40px;right:40px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.solar-eyebrow{font-size:10px;letter-spacing:.22em;color:#99b3cd}
+.solar-header h1{font-weight:300;font-size:32px;letter-spacing:-.025em;margin:12px 0}
+.solar-header p{font-size:10px;letter-spacing:.3em;color:#d5b77e}
+.solar-explorer button{pointer-events:auto;border:1px solid #9ab6d32b;background:#0c1522b8;color:#c9d9e9;padding:11px 15px;font:12px Segoe UI,sans-serif;border-radius:4px;cursor:pointer}
+.solar-explorer button:hover,.solar-explorer button.active{color:#fff;border-color:#e6bc7d88;background:#b8925120}
+.solar-info{position:absolute;left:40px;top:39%;width:220px;pointer-events:none}
+.solar-info h2{font-size:40px;font-weight:300;margin:12px 0;color:#f3ddb4}
+.solar-description{font-size:14px;line-height:1.8;color:#adbed1}
+.solar-period{margin-top:28px;padding-top:18px;border-top:1px solid #a9c3dd25;font-size:9px;letter-spacing:.1em;color:#94acc4;line-height:1.8}
+.solar-planets{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);display:flex;gap:5px;background:#060c15cc;padding:7px;border:1px solid #aac5df20;border-radius:6px}
+.solar-planets button{border-color:transparent;background:transparent;padding:10px 12px;display:flex;align-items:center;gap:7px}
+.solar-planets i{width:6px;height:6px;border-radius:50%;display:inline-block}
+.solar-footer{position:absolute;bottom:25px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;gap:20px;color:#718aa4;font-size:10px;letter-spacing:.08em}
+.solar-footer small{max-width:235px;line-height:1.6;letter-spacing:0}
+.solar-open #app{visibility:hidden}

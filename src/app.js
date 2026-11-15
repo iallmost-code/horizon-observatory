@@ -540,6 +540,7 @@
     let lastHudUpdate = 0;
 
     function frame(now) {
+      if (document.body.classList.contains('solar-open')) { lastTime = now; requestAnimationFrame(frame); return; }
       const realDt = Math.max(0, Math.min(0.05, (now - lastTime) * 0.001));
       lastTime = now;
 
