@@ -231,6 +231,28 @@ vec3 ehtPalette(float x) {
   return mix(c3, c4, (x - 0.85) / 0.15);
 }
 
+// Disk plasma pattern for one shear clock. ts is the time the differential
+// rotation has been winding this copy; it must stay bounded (see SHEAR_PERIOD).
+const float SHEAR_PERIOD = 48.0;
+
+float diskPattern(float phi, float logR, float keplerOmega, float ts, float seed) {
+  // "+ adv" advects the pattern toward decreasing phi, matching gasDir in main()
+  float adv = ts * keplerOmega;
+  vec2 uv1 = vec2(phi / TAU * 2.0 + adv * 0.11 + logR * 0.58 + seed, logR * 0.45 - uTime * 0.015);
+  vec2 uv2 = vec2(phi / TAU * 4.0 + adv * 0.19 + logR * 1.05 + seed, logR * 0.92 + 0.37);
+
+  vec4 nA = texture(uNoiseTex, uv1);
+  vec4 nB = texture(uNoiseTex, uv2);
+
+  float filaments = mix(nA.r, nB.g, 0.54);
+  float detail = nB.b;
+  float shear = phi + adv * 0.5;
+  float warp = texture(uNoiseTex, vec2(shear / TAU + seed, logR * 0.65)).g;
+  float rings = 0.5 + 0.5 * sin(logR * 63.0 + warp * 13.0 + sin(shear * 3.0) * 1.8);
+  float clump = smoothstep(0.18, 0.92, filaments * 0.52 + detail * 0.24 + rings * 0.30);
+  return pow(clump, 2.15);
+}
+
 vec3 sampleSky(vec3 dir) {
   dir = normalize(dir);
   float phi = atan(dir.z, dir.x);
@@ -417,20 +439,19 @@ void main() {
         float keplerOmega = 1.65 * pow(max(rMid, 1.3), -1.35);
         float logR = log(max(rMid, 0.5));
 
-        // "+ uTime" advects the pattern toward decreasing phi, matching gasDir below
-        vec2 uv1 = vec2(phi / TAU * 2.0 + uTime * 0.11 * keplerOmega + logR * 0.58, logR * 0.45 - uTime * 0.015);
-        vec2 uv2 = vec2(phi / TAU * 4.0 + uTime * 0.19 * keplerOmega + logR * 1.05, logR * 0.92 + 0.37);
-
-        vec4 nA = texture(uNoiseTex, uv1);
-        vec4 nB = texture(uNoiseTex, uv2);
-
-        float filaments = mix(nA.r, nB.g, 0.54);
-        float detail = nB.b;
-        float shear = phi + uTime * keplerOmega * 0.5;
-        float warp = texture(uNoiseTex, vec2(shear / TAU, logR * 0.65)).g;
-        float rings = 0.5 + 0.5 * sin(logR * 63.0 + warp * 13.0 + sin(shear * 3.0) * 1.8);
-        float clump = smoothstep(0.18, 0.92, filaments * 0.52 + detail * 0.24 + rings * 0.30);
-        clump = pow(clump, 2.15);
+        // Differential rotation driven by raw uTime winds the pattern tighter forever
+        // until it aliases into grain. Instead run two copies on clocks that reset
+        // every SHEAR_PERIOD seconds, half a period apart, and crossfade so each
+        // copy is invisible at the moment its clock resets (flow-map technique).
+        float cyc = uTime / SHEAR_PERIOD;
+        float fA = fract(cyc);
+        float fB = fract(cyc + 0.5);
+        float wA = 1.0 - abs(2.0 * fA - 1.0);
+        float clump = mix(
+          diskPattern(phi, logR, keplerOmega, fB * SHEAR_PERIOD, 0.37),
+          diskPattern(phi, logR, keplerOmega, fA * SHEAR_PERIOD, 0.0),
+          wA
+        );
 
         // Relativistic Doppler shift & beaming factor g
         vec3 gasDir = normalize(vec3(pMid.z, 0.0, -pMid.x));
